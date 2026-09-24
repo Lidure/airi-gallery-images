@@ -37,7 +37,23 @@ jobs:
           path: gallery/gallery_index.json
           if-no-files-found: error
       - name: Verify complete rebuilt index
-        run: python -m pytest tests -q
+        id: verify
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          python -m pytest tests -vv 2>&1 | tee integrity-report.txt
+      - name: Preserve integrity diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gallery-integrity-diagnostics
+          path: |
+            integrity-report.txt
+            gallery/gallery_index.json
+          if-no-files-found: error
+      - name: Fail if integrity verification failed
+        if: steps.verify.outcome == 'failure'
+        run: exit 1
       - name: Summarize rebuilt manifest
         run: |
           python - <<'PY'
