@@ -30,6 +30,12 @@ jobs:
         run: python -m pytest tests/test_rebuild_gallery_index.py -q
       - name: Rebuild perceptual index
         run: python scripts/rebuild_gallery_index.py
+      - name: Preserve rebuilt manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: rebuilt-gallery-index
+          path: gallery/gallery_index.json
+          if-no-files-found: error
       - name: Verify complete rebuilt index
         run: python -m pytest tests -q
       - name: Summarize rebuilt manifest
