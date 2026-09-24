@@ -1,5 +1,6 @@
 import json
 import re
+import subprocess
 from pathlib import Path
 
 
@@ -9,20 +10,23 @@ HASH_RE = re.compile(r"^[0-9a-f]{16}$")
 
 
 def gallery_images() -> list[str]:
-    root = Path("gallery")
+    output = subprocess.check_output(
+        ["git", "ls-tree", "-r", "--name-only", "HEAD", "--", "gallery"],
+        text=True,
+    )
     paths: list[str] = []
-    for category in sorted(root.iterdir()):
-        if not category.is_dir():
+    for raw in output.splitlines():
+        path = raw.strip().replace("\\", "/")
+        parts = path.split("/")
+        if len(parts) != 3 or parts[0] != "gallery":
             continue
-        for path in sorted(category.iterdir()):
-            if not path.is_file():
-                continue
-            if path.name.startswith(".airi-renumber-"):
-                continue
-            if path.suffix.lower() not in IMAGE_SUFFIXES:
-                continue
-            paths.append(path.as_posix())
-    return paths
+        name = parts[-1]
+        if name.startswith(".airi-renumber-"):
+            continue
+        if Path(name).suffix.lower() not in IMAGE_SUFFIXES:
+            continue
+        paths.append(path)
+    return sorted(paths)
 
 
 def load_manifest() -> dict:
