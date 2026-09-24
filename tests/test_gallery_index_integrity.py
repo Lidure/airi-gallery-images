@@ -11,12 +11,22 @@ HASH_RE = re.compile(r"^[0-9a-f]{16}$")
 
 def gallery_images() -> list[str]:
     output = subprocess.check_output(
-        ["git", "ls-tree", "-r", "--name-only", "HEAD", "--", "gallery"],
+        [
+            "git",
+            "-c",
+            "core.quotePath=false",
+            "ls-tree",
+            "-r",
+            "--name-only",
+            "HEAD",
+            "--",
+            "gallery",
+        ],
         text=True,
     )
     paths: list[str] = []
     for raw in output.splitlines():
-        path = raw.strip().replace("\\", "/")
+        path = raw.strip()
         parts = path.split("/")
         if len(parts) != 3 or parts[0] != "gallery":
             continue
@@ -31,6 +41,11 @@ def gallery_images() -> list[str]:
 
 def load_manifest() -> dict:
     return json.loads(Path("gallery/gallery_index.json").read_text(encoding="utf-8"))
+
+
+def test_gallery_images_include_unicode_category_paths():
+    paths = gallery_images()
+    assert "gallery/airi图片/5150.jpg" in paths
 
 
 def test_gallery_index_exactly_covers_repository_images():
